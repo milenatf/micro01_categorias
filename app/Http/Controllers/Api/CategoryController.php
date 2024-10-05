@@ -47,16 +47,35 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(StoreUpdateCategory $request, string $url)
     {
-        //
+        $category = $this->repository->where('url', $url)->first();
+
+        if(!$category) return response()->json(['status' => 'Not found'], 404);
+
+        try  {
+            $category->update($request->validated());
+
+            return response()->json(['status' => 'success'], 200);
+        } catch(\Exception $e) {
+
+            return response()->json(['status' => 'error'], 500);
+        }
+
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(string $url)
     {
-        //
+        $category = $this->repository->where('url', $url)->first();
+
+        if(!$category->delete()) {
+            return response()->json(['status' => 'failed', 'message' => 'Não foi possivel excluir a categoria.'], 500);
+        }
+
+        return response()->json(['status' => 'success', 'message' => 'Categoria excluída com sucesso!'], 200);
+
     }
 }
