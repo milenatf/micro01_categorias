@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateCompany;
 use App\Http\Resources\CompanyResource;
+use App\Jobs\CompanyCreatedJob;
 use App\Models\Company;
 use App\Services\EvaluationService;
 use Illuminate\Http\Request;
@@ -34,6 +35,12 @@ class CompanyController extends Controller
     public function store(StoreUpdateCompany $request)
     {
         $company = $this->repository->create($request->validated());
+
+        if(!$company) {
+            return response()->json(['status' => 'failed', 'message' => 'Não foi possível criar a empresa.'], 500);
+        }
+
+        CompanyCreatedJob::dispatch($company->email)->onQueue('queue_email');
 
         return new CompanyResource($company);
         // $company = $this->companyService->createNewCompany($request->validated(), $request->image);
