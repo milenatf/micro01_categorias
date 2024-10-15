@@ -6,11 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateCompany;
 use App\Http\Resources\CompanyResource;
 use App\Models\Company;
+use App\Services\EvaluationService;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
-    public function __construct(protected Company $repository)
+    public function __construct(protected Company $repository, protected EvaluationService $evaluationService)
     {
         
     }
@@ -49,10 +50,16 @@ class CompanyController extends Controller
     public function show(string $uuid)
     {
         $company = $this->repository->where('uuid', $uuid)->firstOrFail();
-
         if(!$company) return response()->json(['message' => 'Company not found'], 404);
 
-        return new CompanyResource($company);
+        $evaluations = json_decode($this->evaluationService->getEvaluationsCompany($uuid));
+
+        // return response()->json($response);
+
+        return (new CompanyResource($company))
+                    ->additional([
+                        'evaluations' => $evaluations->data
+                    ]);
     }
 
     /**

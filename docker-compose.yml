@@ -27,7 +27,8 @@ services:
 
   # db mysql
   db_micro01:
-    image: mysql:5.7.22
+    # image: mysql:5.7.22
+    image: mysql:8.0
     platform: linux/x86_64
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-laravel}
