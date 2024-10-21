@@ -6,23 +6,25 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUpdateCompany;
 use App\Http\Resources\CompanyResource;
 use App\Jobs\CompanyCreatedJob;
-use App\Models\Company;
+// use App\Models\Company;
+use App\Services\CompanyService;
 use App\Services\EvaluationService;
 use Illuminate\Http\Request;
 
 class CompanyController extends Controller
 {
-    public function __construct(protected Company $repository, protected EvaluationService $evaluationService)
-    {
-        
+    public function __construct(
+        protected EvaluationService $evaluationService,
+        protected CompanyService $companyService
+    ) {
+
     }
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
-        // $companies = $this->repository->with('category')->get();
-        $companies = $this->repository->getCompanies($request->get('filter', ''));
+        $companies = $this->companyService->getCompanies($request->get('filter', ''));
 
         if(!$companies) return response()->json('Not found.', 404);
 
@@ -34,7 +36,7 @@ class CompanyController extends Controller
      */
     public function store(StoreUpdateCompany $request)
     {
-        $company = $this->repository->create($request->validated());
+        $company = $this->companyService->createNewCompany($request->validated(), $request->file('image'));
 
         if(!$company) {
             return response()->json(['status' => 'failed', 'message' => 'Não foi possível criar a empresa.'], 500);
@@ -43,12 +45,6 @@ class CompanyController extends Controller
         CompanyCreatedJob::dispatch($company->email)->onQueue('queue_email');
 
         return new CompanyResource($company);
-        // $company = $this->companyService->createNewCompany($request->validated(), $request->image);
-
-        // CompanyCreated::dispatch($company->email)
-        //                     ->onQueue('queue_email');
-
-        // return new CompanyResource($company);
     }
 
     /**
@@ -56,12 +52,11 @@ class CompanyController extends Controller
      */
     public function show(string $uuid)
     {
-        $company = $this->repository->where('uuid', $uuid)->firstOrFail();
+        $company = $this->companyService->getCompanyByUuid($uuid);
+
         if(!$company) return response()->json(['message' => 'Company not found'], 404);
 
         $evaluations = json_decode($this->evaluationService->getEvaluationsCompany($uuid));
-
-        // return response()->json($response);
 
         return (new CompanyResource($company))
                     ->additional([
@@ -74,18 +69,9 @@ class CompanyController extends Controller
      */
     public function update(StoreUpdateCompany $request, string $uuid)
     {
-        $company = $this->repository->where('uuid', $uuid)->first();
+        $this->companyService->updateCompany( $uuid, $request->validated(), $request->image);
 
-        if(!$company) return response()->json(['status' => 'Not found'], 404);
-
-        try  {
-            $company->update($request->validated());
-
-            return response()->json(['status' => 'success'], 200);
-        } catch(\Exception $e) {
-
-            return response()->json(['status' => 'error'], 500);
-        }
+        return response()->json(['status' => 'Updated'], 200);
     }
 
     /**
@@ -93,16 +79,8 @@ class CompanyController extends Controller
      */
     public function destroy(string $uuid)
     {
-        $company = $this->repository->where('uuid', $uuid)->first();
+        $this->companyService->deleteCompany($uuid);
 
-        if(!$company) return response()->json('Company not found', 404);
-
-        try {
-            $company->delete();
-
-            return response()->json('A empresa foi excluída', 200);
-        } catch(\Exception $e) {
-            return response()->json('Não foi possível excluir a empresa', 500);
-        }
+        return response()->json('A empresa foi excluída', 200);
     }
 }

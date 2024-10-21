@@ -9,7 +9,7 @@ class Company extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category_id', 'uuid', 'name', 'url', 'whatsapp', 'email', 'phone', 'facebook', 'instagram', 'youtube'];
+    protected $fillable = ['category_id', 'uuid', 'name', 'url', 'whatsapp', 'email', 'phone', 'facebook', 'instagram', 'youtube', 'image'];
 
     public function category()
     {

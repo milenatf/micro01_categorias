@@ -23,6 +23,7 @@ return new class extends Migration
             $table->string('facebook')->unique()->nullable();
             $table->string('instagram')->unique()->nullable();
             $table->string('youtube')->unique()->nullable();
+            $table->string('image');
             $table->timestamps();
         });
     }
